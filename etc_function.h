@@ -11,6 +11,7 @@ u_char* get_my_mac_address(const char* Dev);
 
 namespace arpcd{
 bool IsBroadcastArp(const u_char* packet, const u_char* mac);
+bool IsCacheUpdate(const u_char* packet, const u_char* ip, const u_char* mac);
 bool IsReplyPacket(const u_char* packet, const u_char* ip, const u_char* mac);
 bool IsArp(const u_char* packet);
 bool IsReply(const u_char* packet);

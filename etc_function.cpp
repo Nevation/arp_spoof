@@ -82,9 +82,8 @@ u_char* get_my_mac_address(const char* Dev){
 }
 
 u_char* get_my_ipv4_address(const char* Dev){
-    char command[64];
+    char command[128];
     sprintf(command, "ifconfig %s | head -2 | tail -1 | cut -d':' -f2 | cut -d' ' -f1", Dev);
-
     FILE* pf = popen(command, "r");
     char buf[40];
     fgets(buf, 40, pf);
@@ -100,6 +99,14 @@ bool IsBroadcastArp(const u_char* packet, const u_char* mac){
            UCharCmp(&packet[6], mac, MAC_SIZE) &&
            UCharCmp(&packet[0], broadcast, MAC_SIZE);
 }
+
+bool IsCacheUpdate(const u_char* packet, const u_char* ip, const u_char* mac){
+    return (IsArp(&packet[12]) &&
+            IsReply(&packet[20]) &&
+            UCharCmp(&packet[28], ip, IP_SIZE) &&
+            UCharCmp(&packet[22], mac, MAC_SIZE));
+}
+
 bool IsReplyPacket(const u_char* packet, const u_char* ip, const u_char* mac){
     return (IsArp(&packet[12]) &&
             IsReply(&packet[20]) &&

