@@ -22,7 +22,7 @@ ethernet_header.o:
 	g++ -std=c++14 -g -c -o ethernet_header.o ethernet_header.cpp
 
 etc_function.o:
-	g++ -std=c++14 -g -c -o etc_function.o etc_function.cpp
+	g++ -std=c++14 -g -c -o etc_function.o etc_function.cpp -fno-stack-protector
 
 hardware.o:
 	g++ -std=c++14 -g -c -o hardware.o hardware.cpp

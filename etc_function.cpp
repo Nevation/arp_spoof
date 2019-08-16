@@ -5,8 +5,7 @@
 
 namespace pcktcd{
 bool IsSenderPacket(const u_char* packet, u_char* sender, u_char* attacker){
-    return (arpcd::UCharCmp(&packet[0], attacker, MAC_SIZE) &&
-       arpcd::UCharCmp(&packet[6], sender, MAC_SIZE));
+    return (arpcd::UCharCmp(&packet[6], sender, MAC_SIZE));
 }
 }
 
@@ -102,15 +101,14 @@ bool IsBroadcastArp(const u_char* packet, const u_char* mac){
 
 bool IsCacheUpdate(const u_char* packet, const u_char* ip, const u_char* mac){
     return (IsArp(&packet[12]) &&
-            IsReply(&packet[20]) &&
-            UCharCmp(&packet[28], ip, IP_SIZE) &&
-            UCharCmp(&packet[22], mac, MAC_SIZE));
+            UCharCmp(&packet[38], ip, IP_SIZE) &&
+            UCharCmp(&packet[6], mac, MAC_SIZE));
 }
 
 bool IsReplyPacket(const u_char* packet, const u_char* ip, const u_char* mac){
     return (IsArp(&packet[12]) &&
             IsReply(&packet[20]) &&
-            UCharCmp(&packet[38], ip, IP_SIZE) &&
+            UCharCmp(&packet[28], ip, IP_SIZE) &&
             UCharCmp(&packet[0], mac, MAC_SIZE));
 }
 
