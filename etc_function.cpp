@@ -108,8 +108,7 @@ bool IsCacheUpdate(const u_char* packet, const u_char* ip, const u_char* mac){
 bool IsReplyPacket(const u_char* packet, const u_char* ip, const u_char* mac){
     return (IsArp(&packet[12]) &&
             IsReply(&packet[20]) &&
-            UCharCmp(&packet[28], ip, IP_SIZE) &&
-            UCharCmp(&packet[0], mac, MAC_SIZE));
+            UCharCmp(&packet[28], ip, IP_SIZE));
 }
 
 bool IsArp(const u_char* packet){

