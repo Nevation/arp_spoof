@@ -17,8 +17,7 @@ private:
     struct Address* Target;
 
     void Init(const char* sender, const char* target);
-    void SetTarget(const u_char* ip);
-    void SetSender(const u_char* ip);
+    Address* SetAddress(const u_char* ip);
     void SetAttacker();
 
     struct arp_packet* MakeRequestPacket(const u_char* ip);

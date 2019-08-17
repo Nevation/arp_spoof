@@ -4,7 +4,7 @@
 
 
 namespace pcktcd{
-bool IsSenderPacket(const u_char* packet, u_char* sender, u_char* attacker){
+bool IsSenderPacket(const u_char* packet, u_char* sender){
     return (arpcd::UCharCmp(&packet[6], sender, MAC_SIZE));
 }
 }
@@ -94,18 +94,16 @@ u_char* get_my_ipv4_address(const char* Dev){
 namespace arpcd{
 bool IsBroadcastArp(const u_char* packet, const u_char* mac){
     u_char broadcast[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-    return IsArp(&packet[12]) &&
-           UCharCmp(&packet[6], mac, MAC_SIZE) &&
+    return UCharCmp(&packet[6], mac, MAC_SIZE) &&
            UCharCmp(&packet[0], broadcast, MAC_SIZE);
 }
 
 bool IsCacheUpdate(const u_char* packet, const u_char* ip, const u_char* mac){
-    return (IsArp(&packet[12]) &&
-            UCharCmp(&packet[38], ip, IP_SIZE) &&
+    return (UCharCmp(&packet[38], ip, IP_SIZE) &&
             UCharCmp(&packet[6], mac, MAC_SIZE));
 }
 
-bool IsReplyPacket(const u_char* packet, const u_char* ip, const u_char* mac){
+bool IsReplyPacket(const u_char* packet, const u_char* ip){
     return (IsArp(&packet[12]) &&
             IsReply(&packet[20]) &&
             UCharCmp(&packet[28], ip, IP_SIZE));

